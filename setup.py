@@ -1,13 +1,13 @@
 from setuptools import setup
 
 setup(
-    name=’youtube_tts_data_generator’,
-    version=’0.1.0',
-    description=’A python library that generates speech data with transcriptions by collecting data from YouTube.’,
-    author=’Het Pandya’,
+    name='youtube_tts_data_generator',
+    version='0.1.0',
+    description='A python library that generates speech data with transcriptions by collecting data from YouTube.',
+    author='Het Pandya',
     url='http://github.com/thehetpandya/youtube_tts_data_generator',
     author_email='hetpandya6797@gmail.com',
-    license=’MIT’,
+    license='MIT',
     install_requires=[
        "webvtt-py",
        "librosa>=0.5.1",
