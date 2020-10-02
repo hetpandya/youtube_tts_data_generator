@@ -8,7 +8,7 @@ from datetime import datetime
 from tqdm import tqdm
 import pandas as pd
 import librosa
-from audio import preprocess_wav
+from .audio import preprocess_wav
 import shutil
 import json
 from pydub import AudioSegment
