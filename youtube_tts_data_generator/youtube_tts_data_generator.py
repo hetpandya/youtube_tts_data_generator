@@ -109,6 +109,13 @@ class YTSpeechDataGenerator(object):
             os.mkdir(os.path.join(self.dest_dir, "txts"))
 
     def download(self, links_txt):
+        """
+        Downloads YouTube Videos as wav files.
+
+        Parameters:
+              links_txt: A .txt file that contains list of
+                         youtube video urls separated by new line.
+        """
         self.text_path = os.path.join(self.root, links_txt)
         if os.path.exists(self.text_path) and os.path.isfile(self.text_path):
 
@@ -469,6 +476,9 @@ class YTSpeechDataGenerator(object):
         after the dataset has been generated.
 
         Parameters:
+              links_txt: A .txt file that contains list of
+                         youtube video urls separated by new line.
+
               download_youtube_data: Weather to download data from
                                      Youtube.
 
