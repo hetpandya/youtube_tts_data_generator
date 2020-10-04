@@ -32,7 +32,7 @@ class YTLogger(object):
 class YTSpeechDataGenerator(object):
     """
     YTSpeechDataGenerator makes it easier to
-    generate data for Text to Speech/Speech to Text.  .     
+    generate data for Text to Speech/Speech to Text.  .
 
     Parameters:
 
@@ -43,9 +43,9 @@ class YTSpeechDataGenerator(object):
 
     keep_audio_extension:   Whether to keep the audio file name
                             extensions in the metadata file.
-                            
-    Available methods:      
-    
+
+    Available methods:
+
     download:               Download wavs from YouTube from a .txt file.
 
     split_audios:           Split the downloaded single wav files into
@@ -56,7 +56,8 @@ class YTSpeechDataGenerator(object):
 
     finalize_dataset:       Generate final dataset from the processes
                             audios.
-    """   
+    """
+
     def __init__(self, dataset_name, output_type="csv", keep_audio_extension=False):
         self.ydl_opts = {
             "format": "bestaudio/best",
@@ -172,22 +173,22 @@ class YTSpeechDataGenerator(object):
                 for line in files_pbar:
                     filename, subtitle, trim_min_begin, trim_min_end = line.split(",")
                     files_pbar.set_description("Processing %s" % filename)
-                    if not subtitle.endswith('.vtt') or subtitle.endswith('.srt'):
-                      raise Exception(
-                          "Invalid subtitle type. Supported subtitle types are 'vtt'/'srt'"
-                      ) 
+                    if not subtitle.endswith(".vtt") or subtitle.endswith(".srt"):
+                        raise Exception(
+                            "Invalid subtitle type. Supported subtitle types are 'vtt'/'srt'"
+                        )
                     trim_min_end = int(trim_min_end)
                     trim_min_begin = int(trim_min_begin)
                     filename = filename[:-4]
                     cnt = 0
-                    if subtitle.endswith('.vtt'):
-                      captions = webvtt.read(
-                          os.path.join(self.download_dir, subtitle)
-                      ).captions
-                    elif subtitle.endswith('.srt'):
-                      captions = webvtt.from_srt(
-                          os.path.join(self.download_dir, subtitle)
-                      ).captions
+                    if subtitle.endswith(".vtt"):
+                        captions = webvtt.read(
+                            os.path.join(self.download_dir, subtitle)
+                        ).captions
+                    elif subtitle.endswith(".srt"):
+                        captions = webvtt.from_srt(
+                            os.path.join(self.download_dir, subtitle)
+                        ).captions
                     for ix in range(len(captions)):
                         cap = captions[ix]
                         text = cap.text.strip()
@@ -317,7 +318,7 @@ class YTSpeechDataGenerator(object):
             raise FileNotFoundError(
                 errno.ENOENT, os.strerror(errno.ENOENT), "files.txt"
             )
-    
+
     def concat_audios(self):
         """
         Joins the chunk of audio files into
@@ -360,27 +361,27 @@ class YTSpeechDataGenerator(object):
             raise FileNotFoundError(
                 errno.ENOENT, os.strerror(errno.ENOENT), "split.csv"
             )
-    
+
     def get_total_audio_length(self):
-      """
-      Returns the total number of preprocessed audio 
-      in seconds.
-      """
-      
-      tqdm.write(
+        """
+        Returns the total number of preprocessed audio
+        in seconds.
+        """
+
+        tqdm.write(
             f"Collected {round(self.len_dataset/3600, 2)}hours ({int(self.len_dataset)} seconds) of audio."
         )
-      return int(self.len_dataset)
+        return int(self.len_dataset)
 
     def finalize_dataset(self, min_audio_length=7):
         """
-        Trims silence from audio files 
+        Trims silence from audio files
         and creates a medatada file in csv/json format.
 
         Parameters:
             min_audio_length: The minimum length of audio files.
         """
-        
+
         tqdm.write(f"Trimming silence from audios in '{self.concat_dir}'.")
 
         concat_audios = [
@@ -450,10 +451,12 @@ class YTSpeechDataGenerator(object):
             tqdm.write(f"Metadata is placed in '{self.dest_dir}' as 'alignment.json'.")
 
         self.get_total_audio_length()
-  
-    def prepare_dataset(self,links_txt,download_youtube_data=True,min_audio_length=7):
-      if download_youtube_data:
-        self.download(links_txt)
-      self.split_audios()
-      self.concat_audios()
-      self.finalize_dataset(min_audio_length)
+
+    def prepare_dataset(
+        self, links_txt, download_youtube_data=True, min_audio_length=7
+    ):
+        if download_youtube_data:
+            self.download(links_txt)
+        self.split_audios()
+        self.concat_audios()
+        self.finalize_dataset(min_audio_length)
