@@ -108,17 +108,10 @@ class YTSpeechDataGenerator(object):
             os.mkdir(os.path.join(self.dest_dir, "txts"))
 
     def download(self, links_txt):
-        """
-        Download youtube videos as .wav files.
-        Parameters:
-            links_txt: A .txt file that contains
-                       list of youtube urls separated by new line.
-        """
         self.text_path = os.path.join(self.root, links_txt)
-
         if os.path.exists(self.text_path) and os.path.isfile(self.text_path):
 
-            links = open(os.path.join(self.root, links_txt)).read().strip().split("\n")
+            links = open(os.path.join(self.text_path)).read().strip().split("\n")
 
             if os.path.getsize(self.text_path) > 0:
                 for ix in range(len(links)):
@@ -159,7 +152,7 @@ class YTSpeechDataGenerator(object):
                     )
 
             else:
-                print(f"ERROR - File '{links_txt}' is empty")
+                raise Exception(f"ERROR - File '{links_txt}' is empty")
         else:
             raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), links_txt)
 
@@ -179,14 +172,22 @@ class YTSpeechDataGenerator(object):
                 for line in files_pbar:
                     filename, subtitle, trim_min_begin, trim_min_end = line.split(",")
                     files_pbar.set_description("Processing %s" % filename)
-
+                    if not subtitle.endswith('.vtt') or subtitle.endswith('.srt'):
+                      raise Exception(
+                          "Invalid subtitle type. Supported subtitle types are 'vtt'/'srt'"
+                      ) 
                     trim_min_end = int(trim_min_end)
                     trim_min_begin = int(trim_min_begin)
                     filename = filename[:-4]
                     cnt = 0
-                    captions = webvtt.read(
-                        os.path.join(self.download_dir, subtitle)
-                    ).captions
+                    if subtitle.endswith('.vtt'):
+                      captions = webvtt.read(
+                          os.path.join(self.download_dir, subtitle)
+                      ).captions
+                    elif subtitle.endswith('.srt'):
+                      captions = webvtt.from_srt(
+                          os.path.join(self.download_dir, subtitle)
+                      ).captions
                     for ix in range(len(captions)):
                         cap = captions[ix]
                         text = cap.text.strip()
@@ -316,7 +317,7 @@ class YTSpeechDataGenerator(object):
             raise FileNotFoundError(
                 errno.ENOENT, os.strerror(errno.ENOENT), "files.txt"
             )
-
+    
     def concat_audios(self):
         """
         Joins the chunk of audio files into
@@ -359,14 +360,27 @@ class YTSpeechDataGenerator(object):
             raise FileNotFoundError(
                 errno.ENOENT, os.strerror(errno.ENOENT), "split.csv"
             )
+    
+    def get_total_audio_length(self):
+      """
+      Returns the total number of preprocessed audio 
+      in seconds.
+      """
+      
+      tqdm.write(
+            f"Collected {round(self.len_dataset/3600, 2)}hours ({int(self.len_dataset)} seconds) of audio."
+        )
+      return int(self.len_dataset)
 
     def finalize_dataset(self, min_audio_length=7):
         """
-        Download youtube videos as .wav files.
+        Trims silence from audio files 
+        and creates a medatada file in csv/json format.
+
         Parameters:
-            links_txt: A .txt file that contains
-                       list of youtube urls separated by new line.
+            min_audio_length: The minimum length of audio files.
         """
+        
         tqdm.write(f"Trimming silence from audios in '{self.concat_dir}'.")
 
         concat_audios = [
@@ -435,6 +449,11 @@ class YTSpeechDataGenerator(object):
             )
             tqdm.write(f"Metadata is placed in '{self.dest_dir}' as 'alignment.json'.")
 
-        tqdm.write(
-            f"Collected {round(self.len_dataset/3600, 2)}hours ({int(self.len_dataset)} seconds) of audio."
-        )
+        self.get_total_audio_length()
+  
+    def prepare_dataset(self,links_txt,download_youtube_data=True,min_audio_length=7):
+      if download_youtube_data:
+        self.download(links_txt)
+      self.split_audios()
+      self.concat_audios()
+      self.finalize_dataset(min_audio_length)
