@@ -455,6 +455,25 @@ class YTSpeechDataGenerator(object):
     def prepare_dataset(
         self, links_txt, download_youtube_data=True, min_audio_length=7
     ):
+        """
+        A wrapper method for:
+          download
+          split_audios
+          concat_audios
+          finalize_dataset
+
+        Downloads YouTube Videos as wav files(optional),
+        splits the audios into chunks, joins the
+        junks into reasonable audios and trims silence
+        from the audios. Creates a metadata file as csv/json
+        after the dataset has been generated.
+
+        Parameters:
+              download_youtube_data: Weather to download data from
+                                     Youtube.
+
+              min_audio_length: The minimum length of audio files.
+        """
         if download_youtube_data:
             self.download(links_txt)
         self.split_audios()
