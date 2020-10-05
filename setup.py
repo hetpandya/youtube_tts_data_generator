@@ -1,9 +1,14 @@
 from setuptools import setup
 
+with open("README.md", "r") as f:
+    long_description = f.read()
+
 setup(
     name='youtube_tts_data_generator',
     version='0.1.0',
     description='A python library that generates speech data with transcriptions by collecting data from YouTube.',
+    long_description=long_description,
+    long_description_content_type="text/markdown",
     author='Het Pandya',
     url='http://github.com/thehetpandya/youtube_tts_data_generator',
     author_email='hetpandya6797@gmail.com',
