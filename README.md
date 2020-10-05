@@ -98,7 +98,9 @@ generator.prepare_dataset('links.txt')
         - Default value is *True*
       - *min_audio_length*:
         - The minumum length of the speech that should be kept. The rest will be ignored.
-    - Example - ```generator.prepare_dataset(links_txt='links.txt',download_youtube_data=True,min_audio_length=6)```
+    - Example - ```generator.prepare_dataset(links_txt='links.txt',
+                                             download_youtube_data=True,
+                                             min_audio_length=6)```
 <!--te-->
 
 ## Final dataset structure
