@@ -83,6 +83,9 @@ generator.prepare_dataset('links.txt')
       - *min_audio_length*:
         - The minumum length of the speech that should be kept. The rest will be ignored.
         - The default value is set set to *7*.
+      - *max_audio_length*:
+        - The maximum length of the speech that should be kept. The rest will be ignored.
+        - The default value is set set to *14*.        
     - Example - ```generator.finalize_dataset(min_audio_length=6)```
   - get_total_audio_length():
     - Returns the total amount of preprocessed speech data collected by the generator.
@@ -98,6 +101,10 @@ generator.prepare_dataset('links.txt')
         - Default value is *True*
       - *min_audio_length*:
         - The minumum length of the speech that should be kept. The rest will be ignored.
+        - The default value is set set to *7*.        
+      - *max_audio_length*:
+        - The maximum length of the speech that should be kept. The rest will be ignored.
+        - The default value is set set to *14*.        
     - Example - ```generator.prepare_dataset(links_txt='links.txt',
                                              download_youtube_data=True,
                                              min_audio_length=6)```
