@@ -82,6 +82,8 @@ class YTSpeechDataGenerator(object):
         self.filenames_txt = os.path.join(self.download_dir, "files.txt")
         self.split_audios_csv = os.path.join(self.split_dir, "split.csv")
         self.len_dataset = 0
+        self.len_shortest_audio = 0
+        self.len_longest_audio = 0
         self.keep_audio_extension = keep_audio_extension
         if output_type not in ["csv", "json"]:
             raise Exception(
@@ -336,11 +338,11 @@ class YTSpeechDataGenerator(object):
         ):
             tqdm.write(f"Reading audio data from 'split.csv'.")
             df = pd.read_csv(self.split_audios_csv, sep="|")
-            for ix in tqdm(range(0, df.shape[0], 3)):
+            for ix in tqdm(range(0, df.shape[0], 2)):
                 try:
                     combined_sounds = 0
                     text = ""
-                    for i in range(ix, ix + 3):
+                    for i in range(ix, ix + 2):
                         audio = df.iloc[i][0]
                         sound1 = AudioSegment.from_wav(
                             os.path.join(self.split_dir, audio)
@@ -380,13 +382,15 @@ class YTSpeechDataGenerator(object):
         )
         return int(self.len_dataset)
 
-    def finalize_dataset(self, min_audio_length=7):
+    def finalize_dataset(self, min_audio_length=7,max_audio_length=14):
         """
         Trims silence from audio files
         and creates a medatada file in csv/json format.
 
         Parameters:
             min_audio_length: The minimum length of audio files.
+
+            max_audio_length: The maximum length of audio files.
         """
 
         tqdm.write(f"Trimming silence from audios in '{self.concat_dir}'.")
@@ -398,19 +402,25 @@ class YTSpeechDataGenerator(object):
 
         filtered_audios = []
         filtered_txts = []
+        audio_lens = []
 
         for ix in tqdm(range(len(concat_audios))):
             audio = concat_audios[ix]
             wav, sr = librosa.load(os.path.join(self.concat_dir, audio))
             silence_removed = preprocess_wav(wav)
             trimmed_length = silence_removed.shape[0] / sr
-            if trimmed_length >= min_audio_length:
+            audio_lens.append(trimmed_length)
+            
+            if trimmed_length >= min_audio_length and trimmed_length <= max_audio_length:
                 self.len_dataset += trimmed_length
                 librosa.output.write_wav(
                     os.path.join(self.dest_dir, "wavs", audio), silence_removed, sr
                 )
                 filtered_audios.append(audio)
                 filtered_txts.append(audio.replace(".wav", ".txt"))
+
+        self.len_shortest_audio = min(audio_lens)
+        self.len_longest_audio = max(audio_lens)
 
         for text in filtered_txts:
             shutil.copyfile(
@@ -460,7 +470,7 @@ class YTSpeechDataGenerator(object):
         self.get_total_audio_length()
 
     def prepare_dataset(
-        self, links_txt, download_youtube_data=True, min_audio_length=7
+        self, links_txt, download_youtube_data=True, min_audio_length=7,max_audio_length=14
     ):
         """
         A wrapper method for:
@@ -483,6 +493,8 @@ class YTSpeechDataGenerator(object):
                                      Youtube.
 
               min_audio_length: The minimum length of audio files.
+
+              max_audio_length: The maximum length of audio files.
         """
         if download_youtube_data:
             self.download(links_txt)
