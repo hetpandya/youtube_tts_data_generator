@@ -3,7 +3,7 @@
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://en.wikipedia.org/wiki/MIT_License)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-A python library to generate speech dataset. Youtube Speech Data Generator also takes care of almost all your speech data preprocessing needed to build a speech dataset along with their transcriptions making sure it follows a directory structure followed by most of the text-to-speech architecture.
+A python library to generate speech dataset. Youtube Speech Data Generator also takes care of almost all your speech data preprocessing needed to build a speech dataset along with their transcriptions making sure it follows a directory structure followed by most of the text-to-speech architectures.
 
 ## Installation
 Make sure [ffmpeg](https://ffmpeg.org/download.html#get-packages) is installed and is set to the system path.
