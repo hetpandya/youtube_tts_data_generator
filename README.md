@@ -3,7 +3,7 @@
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://en.wikipedia.org/wiki/MIT_License)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-A python library to generate speech dataset. Youtube Speech Data Generator also takes care of almost all your speech data preprocessing needed to build a speech dataset along with their transcriptions.
+A python library to generate speech dataset. Youtube Speech Data Generator also takes care of almost all your speech data preprocessing needed to build a speech dataset along with their transcriptions making sure it follows a directory structure followed by most of the text-to-speech architecture.
 
 ## Installation
 Make sure [ffmpeg](https://ffmpeg.org/download.html#get-packages) is installed and is set to the system path.
@@ -50,6 +50,14 @@ generator.prepare_dataset('links.txt')
       - The type of the metadata to be created after the dataset has been generated.
       - Supported types: csv/json
       - Default output type is set to *csv*
+      - The csv file follows the format of [LJ Speech Dataset](https://keithito.com/LJ-Speech-Dataset/)
+      - The json file follows this format:
+        ```
+        {
+            "your_dataset1.wav": "This is an example text",
+            "your_dataset2.wav": "This is an another example text",
+        }
+        ```
     - *keep_audio_extension*:
       - Whether to keep the audio file extension in the metadata file
       - Default value is set to *False*
