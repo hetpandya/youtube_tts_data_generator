@@ -12,6 +12,7 @@ from .audio import preprocess_wav
 import shutil
 import json
 from pydub import AudioSegment
+from .text_cleaner import Cleaner
 
 
 class NoSubtitleWarning(UserWarning):
@@ -91,6 +92,7 @@ class YTSpeechDataGenerator(object):
             )
         else:
             self.output_type = output_type
+        self.cleaner = Cleaner()
 
         if not os.path.exists(self.prep_dir):
             print(f"Creating directory '{self.name}_prep'..")
@@ -382,7 +384,7 @@ class YTSpeechDataGenerator(object):
         )
         return int(self.len_dataset)
 
-    def finalize_dataset(self, min_audio_length=7,max_audio_length=14):
+    def finalize_dataset(self, min_audio_length=7, max_audio_length=14):
         """
         Trims silence from audio files
         and creates a medatada file in csv/json format.
@@ -410,8 +412,11 @@ class YTSpeechDataGenerator(object):
             silence_removed = preprocess_wav(wav)
             trimmed_length = silence_removed.shape[0] / sr
             audio_lens.append(trimmed_length)
-            
-            if trimmed_length >= min_audio_length and trimmed_length <= max_audio_length:
+
+            if (
+                trimmed_length >= min_audio_length
+                and trimmed_length <= max_audio_length
+            ):
                 self.len_dataset += trimmed_length
                 librosa.output.write_wav(
                     os.path.join(self.dest_dir, "wavs", audio), silence_removed, sr
@@ -443,7 +448,9 @@ class YTSpeechDataGenerator(object):
             )
 
         if self.output_type == "csv":
-            trimmed["transcription_utf"] = trimmed["transcription"]
+            trimmed["transcription_utf"] = trimmed["transcription"].apply(
+                lambda x: self.cleaner.clean_english_text(x)
+            )
             trimmed.to_csv(
                 os.path.join(self.dest_dir, "metadata.csv"),
                 sep="|",
@@ -470,7 +477,11 @@ class YTSpeechDataGenerator(object):
         self.get_total_audio_length()
 
     def prepare_dataset(
-        self, links_txt, download_youtube_data=True, min_audio_length=7,max_audio_length=14
+        self,
+        links_txt,
+        download_youtube_data=True,
+        min_audio_length=7,
+        max_audio_length=14,
     ):
         """
         A wrapper method for:
