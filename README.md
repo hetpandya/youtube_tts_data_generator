@@ -132,3 +132,5 @@ your_dataset
 ```
 
 NOTE - `audio.py` is highly based on [Real Time Voice Cloning](https://github.com/CorentinJ/Real-Time-Voice-Cloning/blob/master/encoder/audio.py)
+
+*Read more about the library [here](https://medium.com/@TheHetPandya/creating-your-own-text-to-speech-dataset-from-youtube-f1177845b12e)*
