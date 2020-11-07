@@ -32,7 +32,7 @@ generator.prepare_dataset('links.txt')
 ## Usage
 <!--ts-->
 - Initializing the generator:
-  ```generator = YTSpeechDataGenerator(dataset_name='your_dataset')```
+  ```generator = YTSpeechDataGenerator(dataset_name='your_dataset',lang='en')```
   - Parameters:
     - *dataset_name*: 
       - The name of the dataset you'd like to give. 
@@ -61,6 +61,10 @@ generator.prepare_dataset('links.txt')
     - *keep_audio_extension*:
       - Whether to keep the audio file extension in the metadata file
       - Default value is set to *False*
+    - *lang*:
+      - The key for the target language in which the subtitles have to be downloaded.
+      - Default value is set to *en*
+      - *Tip* - check list of available languages and their keys using: `generator.get_available_langs()`
  
 - Methods:
   - download():
@@ -95,6 +99,8 @@ generator.prepare_dataset('links.txt')
         - The maximum length of the speech that should be kept. The rest will be ignored.
         - The default value is set set to *14*.        
     - Example - ```generator.finalize_dataset(min_audio_length=6)```
+  - get_available_langs():
+    - Get list of available languages in which the subtitles can be downloaded.
   - get_total_audio_length():
     - Returns the total amount of preprocessed speech data collected by the generator.
     - Example - ```generator.get_total_audio_length()```
