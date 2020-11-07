@@ -101,6 +101,7 @@ generator.prepare_dataset('links.txt')
     - Example - ```generator.finalize_dataset(min_audio_length=6)```
   - get_available_langs():
     - Get list of available languages in which the subtitles can be downloaded.
+    - Example - ```generator.get_available_langs()```
   - get_total_audio_length():
     - Returns the total amount of preprocessed speech data collected by the generator.
     - Example - ```generator.get_total_audio_length()```
