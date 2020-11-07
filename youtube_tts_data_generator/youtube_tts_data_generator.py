@@ -12,6 +12,7 @@ from .audio import preprocess_wav
 import shutil
 import json
 from pydub import AudioSegment
+from .text_cleaner import Cleaner
 
 
 class NoSubtitleWarning(UserWarning):
