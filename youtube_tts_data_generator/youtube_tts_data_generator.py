@@ -13,6 +13,14 @@ import shutil
 import json
 from pydub import AudioSegment
 from .text_cleaner import Cleaner
+from youtube_transcript_api import (
+    YouTubeTranscriptApi,
+    NoTranscriptFound,
+    TranscriptsDisabled,
+)
+from youtube_transcript_api.formatters import JSONFormatter
+import re
+from vtt_to_srt.vtt_to_srt import read_text_file, convert_content
 
 
 class NoSubtitleWarning(UserWarning):
@@ -67,114 +75,72 @@ class YTSpeechDataGenerator(object):
     """
 
     def __init__(
-        self, dataset_name, output_type="csv", keep_audio_extension=False, lang="en"
+        self,
+        dataset_name,
+        output_type="csv",
+        keep_audio_extension=False,
+        lang="en",
+        sr=22050,
     ):
         self.lang_map = {
-            "aa": "Afar",
-            "ab": "Abkhazian",
-            "ae": "Avestan",
             "af": "Afrikaans",
-            "ak": "Akan",
             "am": "Amharic",
-            "an": "Aragonese",
             "ar": "Arabic",
-            "as": "Assamese",
-            "av": "Avaric",
-            "ay": "Aymara",
             "az": "Azerbaijani",
-            "ba": "Bashkir",
             "be": "Belarusian",
             "bg": "Bulgarian",
-            "bh": "Bihari languages",
-            "bi": "Bislama",
-            "bm": "Bambara",
-            "bn": "Bengali",
-            "bo": "Tibetan",
-            "br": "Breton",
+            "bn": "Bangla",
             "bs": "Bosnian",
-            "ca": "Catalan; Valencian",
-            "ce": "Chechen",
-            "ch": "Chamorro",
+            "ca": "Catalan",
+            "ceb": "Cebuano",
             "co": "Corsican",
-            "cr": "Cree",
             "cs": "Czech",
-            "cu": "Church Slavic; Old Slavonic; Church Slavonic; Old Bulgarian; Old Church Slavonic",
-            "cv": "Chuvash",
             "cy": "Welsh",
             "da": "Danish",
             "de": "German",
-            "dv": "Divehi; Dhivehi; Maldivian",
-            "dz": "Dzongkha",
-            "ee": "Ewe",
-            "el": "Greek, Modern (1453-)",
+            "el": "Greek",
             "en": "English",
             "eo": "Esperanto",
-            "es": "Spanish; Castilian",
+            "es": "Spanish",
             "et": "Estonian",
             "eu": "Basque",
             "fa": "Persian",
-            "ff": "Fulah",
             "fi": "Finnish",
-            "fj": "Fijian",
-            "fo": "Faroese",
+            "fil": "Filipino",
             "fr": "French",
             "fy": "Western Frisian",
             "ga": "Irish",
-            "gd": "Gaelic; Scottish Gaelic",
+            "gd": "Scottish Gaelic",
             "gl": "Galician",
-            "gn": "Guarani",
             "gu": "Gujarati",
-            "gv": "Manx",
             "ha": "Hausa",
-            "he": "Hebrew",
+            "haw": "Hawaiian",
             "hi": "Hindi",
-            "ho": "Hiri Motu",
+            "hmn": "Hmong",
             "hr": "Croatian",
-            "ht": "Haitian; Haitian Creole",
+            "ht": "Haitian Creole",
             "hu": "Hungarian",
             "hy": "Armenian",
-            "hz": "Herero",
-            "ia": "Interlingua (International Auxiliary Language Association)",
             "id": "Indonesian",
-            "ie": "Interlingue; Occidental",
             "ig": "Igbo",
-            "ii": "Sichuan Yi; Nuosu",
-            "ik": "Inupiaq",
-            "in": "ind",
-            "io": "Ido",
             "is": "Icelandic",
             "it": "Italian",
-            "iu": "Inuktitut",
-            "iw": "heb",
+            "iw": "Hebrew",
             "ja": "Japanese",
-            "ji": "yid",
             "jv": "Javanese",
             "ka": "Georgian",
-            "kg": "Kongo",
-            "ki": "Kikuyu; Gikuyu",
-            "kj": "Kuanyama; Kwanyama",
             "kk": "Kazakh",
-            "kl": "Kalaallisut; Greenlandic",
-            "km": "Central Khmer",
+            "km": "Khmer",
             "kn": "Kannada",
             "ko": "Korean",
-            "kr": "Kanuri",
-            "ks": "Kashmiri",
             "ku": "Kurdish",
-            "kv": "Komi",
-            "kw": "Cornish",
-            "ky": "Kirghiz; Kyrgyz",
+            "ky": "Kyrgyz",
             "la": "Latin",
-            "lb": "Luxembourgish; Letzeburgesch",
-            "lg": "Ganda",
-            "li": "Limburgan; Limburger; Limburgish",
-            "ln": "Lingala",
+            "lb": "Luxembourgish",
             "lo": "Lao",
             "lt": "Lithuanian",
-            "lu": "Luba-Katanga",
             "lv": "Latvian",
             "mg": "Malagasy",
-            "mh": "Marshallese",
             "mi": "Maori",
             "mk": "Macedonian",
             "ml": "Malayalam",
@@ -183,39 +149,20 @@ class YTSpeechDataGenerator(object):
             "ms": "Malay",
             "mt": "Maltese",
             "my": "Burmese",
-            "na": "Nauru",
-            "nb": "Bokmål, Norwegian; Norwegian Bokmål",
-            "nd": "Ndebele, North; North Ndebele",
             "ne": "Nepali",
-            "ng": "Ndonga",
-            "nl": "Dutch; Flemish",
-            "nn": "Norwegian Nynorsk; Nynorsk, Norwegian",
+            "nl": "Dutch",
             "no": "Norwegian",
-            "nr": "Ndebele, South; South Ndebele",
-            "nv": "Navajo; Navaho",
-            "ny": "Chichewa; Chewa; Nyanja",
-            "oc": "Occitan (post 1500)",
-            "oj": "Ojibwa",
-            "om": "Oromo",
-            "or": "Oriya",
-            "os": "Ossetian; Ossetic",
-            "pa": "Panjabi; Punjabi",
-            "pi": "Pali",
+            "ny": "Nyanja",
+            "or": "Odia",
+            "pa": "Punjabi",
             "pl": "Polish",
-            "ps": "Pushto; Pashto",
+            "ps": "Pashto",
             "pt": "Portuguese",
-            "qu": "Quechua",
-            "rm": "Romansh",
-            "rn": "Rundi",
-            "ro": "Romanian; Moldavian; Moldovan",
+            "ro": "Romanian",
             "ru": "Russian",
             "rw": "Kinyarwanda",
-            "sa": "Sanskrit",
-            "sc": "Sardinian",
             "sd": "Sindhi",
-            "se": "Northern Sami",
-            "sg": "Sango",
-            "si": "Sinhala; Sinhalese",
+            "si": "Sinhala",
             "sk": "Slovak",
             "sl": "Slovenian",
             "sm": "Samoan",
@@ -223,8 +170,7 @@ class YTSpeechDataGenerator(object):
             "so": "Somali",
             "sq": "Albanian",
             "sr": "Serbian",
-            "ss": "Swati",
-            "st": "Sotho, Southern",
+            "st": "Southern Sotho",
             "su": "Sundanese",
             "sv": "Swedish",
             "sw": "Swahili",
@@ -232,32 +178,22 @@ class YTSpeechDataGenerator(object):
             "te": "Telugu",
             "tg": "Tajik",
             "th": "Thai",
-            "ti": "Tigrinya",
             "tk": "Turkmen",
-            "tl": "Tagalog",
-            "tn": "Tswana",
-            "to": "Tonga (Tonga Islands)",
             "tr": "Turkish",
-            "ts": "Tsonga",
             "tt": "Tatar",
-            "tw": "Twi",
-            "ty": "Tahitian",
-            "ug": "Uighur; Uyghur",
+            "ug": "Uyghur",
             "uk": "Ukrainian",
             "ur": "Urdu",
             "uz": "Uzbek",
-            "ve": "Venda",
             "vi": "Vietnamese",
-            "vo": "Volapük",
-            "wa": "Walloon",
-            "wo": "Wolof",
             "xh": "Xhosa",
             "yi": "Yiddish",
             "yo": "Yoruba",
-            "za": "Zhuang; Chuang",
-            "zh": "Chinese",
+            "zh-Hans": "Chinese (Simplified)",
+            "zh-Hant": "Chinese (Traditional)",
             "zu": "Zulu",
         }
+
         self.wav_counter = 0
         self.wav_filenames = []
         self.name = dataset_name
@@ -273,6 +209,7 @@ class YTSpeechDataGenerator(object):
         self.len_shortest_audio = 0
         self.len_longest_audio = 0
         self.keep_audio_extension = keep_audio_extension
+        self.sr = sr
         if output_type not in ["csv", "json"]:
             raise Exception(
                 "Invalid output type. Supported output files are 'csv'/'json'"
@@ -280,6 +217,7 @@ class YTSpeechDataGenerator(object):
         else:
             self.output_type = output_type
         self.cleaner = Cleaner()
+        self.transcript_formatter = JSONFormatter()
 
         if not os.path.exists(self.prep_dir):
             print(f"Creating directory '{self.name}_prep'..")
@@ -312,15 +250,40 @@ class YTSpeechDataGenerator(object):
                     "preferredcodec": "wav",
                 }
             ],
-            "writeautomaticsub": True,
             "logger": YTLogger(),
-            "subtitleslangs": [self.dataset_lang],
         }
 
     def get_available_langs(self):
         print("List of supported languages:\n")
         for key, lang in self.lang_map.items():
             print(key, ":", lang)
+
+    def get_video_id(self, url, pattern="(\/|%3D|v=)([0-9A-z-_]{11})([%#?&]|$)"):
+        matches = re.findall(pattern, url)
+        if matches != []:
+            try:
+                return matches[0][1]
+            except:
+                return []
+        else:
+            return []
+
+    def fix_json_trans(self, trans):
+        return [
+            {
+                "start": trans[ix]["start"],
+                "end": trans[ix + 1]["start"],
+                "text": trans[ix]["text"],
+            }
+            if ix != len(trans) - 1
+            else {
+                "start": trans[ix]["start"],
+                "end": trans[ix]["start"] + trans[ix]["duration"],
+                "text": trans[ix]["text"],
+            }
+            for ix in range(len(trans))
+            if trans[ix]["text"] != "[Music]"
+        ]
 
     def download(self, links_txt):
         """
@@ -337,33 +300,64 @@ class YTSpeechDataGenerator(object):
 
             if os.path.getsize(self.text_path) > 0:
                 for ix in range(len(links)):
-                    filename = f"{self.name}{ix+1}.mp4"
-                    wav_file = filename.replace(".mp4", ".wav")
-                    self.ydl_opts["outtmpl"] = os.path.join(self.download_dir, filename)
                     link = links[ix]
+                    video_id = self.get_video_id(link)
 
-                    with youtube_dl.YoutubeDL(self.ydl_opts) as ydl:
-                        caption_info = ydl.extract_info(link, download=False)[
-                            "automatic_captions"
-                        ]
-                        if caption_info == {}:
-                            warnings.warn(
-                                f"WARNING - video {link} does not have subtitles. Skipping..",
-                                NoSubtitleWarning,
-                            )
-                        else:
-                            ydl.download([link])
-                            print("Completed downloading " + wav_file + " from " + link)
-                            self.wav_counter += 1
-                            self.wav_filenames.append(wav_file)
+                    if video_id != []:
+                        filename = f"{self.name}{ix+1}.mp4"
+                        wav_file = filename.replace(".mp4", ".wav")
+                        self.ydl_opts["outtmpl"] = os.path.join(
+                            self.download_dir, filename
+                        )
 
-                    del self.ydl_opts["outtmpl"]
+                        with youtube_dl.YoutubeDL(self.ydl_opts) as ydl:
+                            try:
+                                trans = (
+                                    YouTubeTranscriptApi.list_transcripts(video_id)
+                                    .find_transcript([self.dataset_lang])
+                                    .fetch()
+                                )
+                                trans = self.fix_json_trans(trans)
+                                json_formatted = (
+                                    self.transcript_formatter.format_transcript(
+                                        trans, ensure_ascii=False, indent=2
+                                    )
+                                )
+                                open(
+                                    os.path.join(
+                                        self.download_dir,
+                                        wav_file.replace(
+                                            ".wav", f".{self.dataset_lang}.json"
+                                        ),
+                                    ),
+                                    "w",
+                                ).write(json_formatted)
+                                ydl.download([link])
+                                print(
+                                    "Completed downloading "
+                                    + wav_file
+                                    + " from "
+                                    + link
+                                )
+                                self.wav_counter += 1
+                                self.wav_filenames.append(wav_file)
+                            except (TranscriptsDisabled, NoTranscriptFound):
+                                warnings.warn(
+                                    f"WARNING - video {link} does not have subtitles. Skipping..",
+                                    NoSubtitleWarning,
+                                )
 
+                        del self.ydl_opts["outtmpl"]
+                    else:
+                        warnings.warn(
+                            f"WARNING - video {link} does not seem to be a valid YouTube url. Skipping..",
+                            InvalidURLWarning,
+                        )
                 if self.wav_filenames != []:
                     with open(self.filenames_txt, "w") as f:
-                        lines = "filename,subtitle,trim_min_begin,trim_min_end\n"
+                        lines = "filename,subtitle,trim_mins_begin,trim_mins_end\n"
                         for wav in self.wav_filenames:
-                            lines += f"{wav},{wav.replace('.wav','.mp4')}.{self.dataset_lang}.vtt,0,0\n"
+                            lines += f"{wav},{wav.replace('.wav','')}.{self.dataset_lang}.json,0,0\n"
                         f.write(lines)
                     print(f"Completed downloading audios to '{self.download_dir}'")
                     print(f"You can find files data in '{self.filenames_txt}'")
@@ -377,6 +371,52 @@ class YTSpeechDataGenerator(object):
                 raise Exception(f"ERROR - File '{links_txt}' is empty")
         else:
             raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), links_txt)
+
+    def convert_time(self, seconds):
+        seconds = seconds % (24 * 3600)
+        hour = seconds // 3600
+        seconds %= 3600
+        minutes = seconds // 60
+        seconds %= 60
+
+        return "%d:%02d:%02d" % (hour, minutes, seconds)
+
+    def parse_time(self, time_string):
+        hours = int(re.findall(r"(\d+):\d+:\d+,\d+", time_string)[0])
+        minutes = int(re.findall(r"\d+:(\d+):\d+,\d+", time_string)[0])
+        seconds = int(re.findall(r"\d+:\d+:(\d+),\d+", time_string)[0])
+        milliseconds = int(re.findall(r"\d+:\d+:\d+,(\d+)", time_string)[0])
+
+        return (hours * 3600 + minutes * 60 + seconds) * 1000 + milliseconds
+
+    def parse_srt(self, srt_string):
+        # Original : https://github.com/pgrabovets/srt-to-json
+        srt_list = []
+
+        for line in srt_string.split("\n\n"):
+            if line != "":
+                index = int(re.match(r"\d+", line).group())
+
+                pos = re.search(r"\d+:\d+:\d+,\d+ --> \d+:\d+:\d+,\d+", line).end() + 1
+                content = line[pos:]
+                start_time_string = re.findall(
+                    r"(\d+:\d+:\d+,\d+) --> \d+:\d+:\d+,\d+", line
+                )[0]
+                end_time_string = re.findall(
+                    r"\d+:\d+:\d+,\d+ --> (\d+:\d+:\d+,\d+)", line
+                )[0]
+                start_time = self.parse_time(start_time_string)
+                end_time = self.parse_time(end_time_string)
+
+                srt_list.append(
+                    {
+                        "text": content.replace("\n", "").strip(),
+                        "start": start_time / 1000,
+                        "duration": (end_time - start_time) / 1000,
+                    }
+                )
+
+        return srt_list
 
     def split_audios(self):
         """
@@ -393,31 +433,67 @@ class YTSpeechDataGenerator(object):
                 files_pbar = tqdm(files_list)
                 for line in files_pbar:
                     filename, subtitle, trim_min_begin, trim_min_end = line.split(",")
+                    caption_json = None
+                    out_filename = filename.replace(".wav", ".json")
                     files_pbar.set_description("Processing %s" % filename)
-                    if not subtitle.endswith(".vtt") or subtitle.endswith(".srt"):
+                    if subtitle.lower().endswith(".vtt"):
+                        tqdm.write(f"Detected VTT captions. Converting to json..")
+                        file_contents = open(
+                            os.path.join(self.download_dir, subtitle),
+                            mode="r",
+                            encoding="utf-8",
+                        ).read()
+                        srt = convert_content(file_contents)
+                        caption_json = self.parse_srt(srt.strip())
+                    elif subtitle.lower().endswith(".srt"):
+                        tqdm.write(f"Detected SRT captions. Converting to json..")
+                        file_contents = open(
+                            os.path.join(self.download_dir, subtitle),
+                            mode="r",
+                            encoding="utf-8",
+                        ).read()
+                        caption_json = self.parse_srt(file_contents.strip())
+                    elif subtitle.lower().endswith(".json"):
+                        pass
+                    else:
                         raise Exception(
                             "Invalid subtitle type. Supported subtitle types are 'vtt'/'srt'"
+                        )
+                    if caption_json:
+                        caption_json = self.fix_json_trans(caption_json)
+                        open(
+                            os.path.join(self.download_dir, out_filename),
+                            "w",
+                            encoding="utf-8",
+                        ).write(json.dumps(caption_json, indent=2, sort_keys=True))
+                        tqdm.write(
+                            f"Writing json captions for {filename} to '{out_filename}'."
                         )
                     trim_min_end = int(trim_min_end)
                     trim_min_begin = int(trim_min_begin)
                     filename = filename[:-4]
                     cnt = 0
-                    if subtitle.endswith(".vtt"):
-                        captions = webvtt.read(
+                    if not caption_json:
+                        with open(
                             os.path.join(self.download_dir, subtitle)
-                        ).captions
-                    elif subtitle.endswith(".srt"):
-                        captions = webvtt.from_srt(
-                            os.path.join(self.download_dir, subtitle)
-                        ).captions
+                        ) as json_cap:
+                            captions = json.loads(json_cap.read())
+                    else:
+                        captions = caption_json
                     for ix in range(len(captions)):
                         cap = captions[ix]
-                        text = cap.text.strip()
-                        t = datetime.strptime(cap.start, "%H:%M:%S.%f").time()
+                        text = cap["text"]
+                        start = cap["start"]
+                        end = cap["end"]
 
+                        t = datetime.strptime(
+                            self.convert_time(start), "%H:%M:%S"
+                        ).time()
                         if trim_min_end > 0:
 
-                            t2 = datetime.strptime(cap.end, "%H:%M:%S.%f").time()
+                            t2 = datetime.strptime(
+                                self.convert_time(end), "%H:%M:%S"
+                            ).time()
 
                             if (
                                 t.minute >= trim_min_begin
@@ -433,9 +509,9 @@ class YTSpeechDataGenerator(object):
                                     "-i",
                                     f"{os.path.join(self.download_dir,filename)}.wav",
                                     "-ss",
-                                    cap.start,
+                                    str(start),
                                     "-to",
-                                    cap.end,
+                                    str(end),
                                     "-c",
                                     "copy",
                                     f"{os.path.join(self.split_dir,new_name)}.wav",
@@ -457,9 +533,9 @@ class YTSpeechDataGenerator(object):
                                     "-i",
                                     f"{os.path.join(self.download_dir,filename)}.wav",
                                     "-ss",
-                                    cap.start,
+                                    str(start),
                                     "-to",
-                                    cap.end,
+                                    str(end),
                                     "-c",
                                     "copy",
                                     f"{os.path.join(self.split_dir,new_name)}.wav",
@@ -497,30 +573,19 @@ class YTSpeechDataGenerator(object):
                                 .strip()
                             )
 
-                            if ix != 0:
-                                prev_file = fname + "-" + str(ix - 1) + ".txt"
-
-                                prev_text = (
-                                    open(os.path.join(self.split_dir, prev_file))
-                                    .read()
-                                    .strip()
-                                )
-
-                                current_text = current_text.replace(
-                                    prev_text, ""
-                                ).strip()
-
                             wav, sr = librosa.load(
                                 os.path.join(self.split_dir, current_wav)
                             )
                             length = wav.shape[0] / sr
 
                             if current_text != "" and length > 1:
-                                df.append([current_wav, current_text])
+                                df.append([current_wav, current_text, round(length, 2)])
                         except:
                             pass
 
-                df = pd.DataFrame(df, columns=["wav_file_name", "transcription"])
+                df = pd.DataFrame(
+                    df, columns=["wav_file_name", "transcription", "length"]
+                )
                 df.to_csv(self.split_audios_csv, sep="|", index=None)
 
                 tqdm.write(
@@ -540,7 +605,7 @@ class YTSpeechDataGenerator(object):
                 errno.ENOENT, os.strerror(errno.ENOENT), "files.txt"
             )
 
-    def concat_audios(self):
+    def concat_audios(self, max_limit=7, concat_count=2):
         """
         Joins the chunk of audio files into
         audios of recognizable length.
@@ -550,19 +615,33 @@ class YTSpeechDataGenerator(object):
         ):
             tqdm.write(f"Reading audio data from 'split.csv'.")
             df = pd.read_csv(self.split_audios_csv, sep="|")
-            for ix in tqdm(range(0, df.shape[0], 2)):
+            filtered_df = df[df["length"] <= 7]
+            long_audios = df[df["length"] > 7]
+
+            name_ix = 0
+            tqdm.write(f"Processing audios shorter than {max_limit} seconds..")
+            for ix in tqdm(range(0, filtered_df.shape[0], 2)):
+                current_audio = filtered_df.iloc[ix][0]
+                text = ""
+                combined_sounds = 0
+
+                sound1 = AudioSegment.from_wav(
+                    os.path.join(self.split_dir, current_audio)
+                )
+                combined_sounds += sound1
+                text += " " + filtered_df.iloc[ix][1]
                 try:
-                    combined_sounds = 0
-                    text = ""
-                    for i in range(ix, ix + 2):
-                        audio = df.iloc[i][0]
-                        sound1 = AudioSegment.from_wav(
-                            os.path.join(self.split_dir, audio)
+                    for count_ix in range(ix + 1, ix + concat_count):
+                        next_audio = filtered_df.iloc[count_ix][0]
+                        sound2 = AudioSegment.from_wav(
+                            os.path.join(self.split_dir, next_audio)
                         )
-                        combined_sounds += sound1
-                        text += " " + df.iloc[i][1]
+                        text += " " + filtered_df.iloc[count_ix][1]
+                        combined_sounds += sound2
+
                     text = text.strip()
-                    new_name = f"{self.name}-{ix}"
+                    new_name = f"{self.name}-{name_ix}"
+                    combined_sounds.set_frame_rate(self.sr)
                     combined_sounds.export(
                         os.path.join(self.concat_dir, new_name + ".wav"), format="wav"
                     )
@@ -570,8 +649,40 @@ class YTSpeechDataGenerator(object):
                         os.path.join(self.concat_dir, new_name + ".txt"), "w"
                     ) as f:
                         f.write(text)
-                except:
-                    pass
+                    name_ix += 1
+                except IndexError:
+                    new_name = f"{self.name}-{name_ix}"
+                    combined_sounds = AudioSegment.from_wav(
+                        os.path.join(self.split_dir, current_audio)
+                    )
+                    combined_sounds.set_frame_rate(self.sr)
+                    text = text.strip()
+                    combined_sounds.export(
+                        os.path.join(self.concat_dir, new_name + ".wav"), format="wav"
+                    )
+                    with open(
+                        os.path.join(self.concat_dir, new_name + ".txt"), "w"
+                    ) as f:
+                        f.write(text)
+                    name_ix += 1
+
+            tqdm.write(f"Processing audios longer than {max_limit} seconds..")
+
+            for ix in tqdm(range(0, long_audios.shape[0])):
+                current_audio = filtered_df.iloc[ix][0]
+                text = filtered_df.iloc[ix][1].strip()
+                new_name = f"{self.name}-{name_ix}"
+                combined_sounds = AudioSegment.from_wav(
+                    os.path.join(self.split_dir, current_audio)
+                )
+                combined_sounds.set_frame_rate(self.sr)
+                combined_sounds.export(
+                    os.path.join(self.concat_dir, new_name + ".wav"), format="wav"
+                )
+                with open(os.path.join(self.concat_dir, new_name + ".txt"), "w") as f:
+                    f.write(text)
+                name_ix += 1
+
             tqdm.write(
                 f"Completed concatenating audios and their transcriptions in '{self.concat_dir}'."
             )
@@ -594,7 +705,7 @@ class YTSpeechDataGenerator(object):
         )
         return int(self.len_dataset)
 
-    def finalize_dataset(self, min_audio_length=7, max_audio_length=14):
+    def finalize_dataset(self, min_audio_length=5, max_audio_length=14):
         """
         Trims silence from audio files
         and creates a medatada file in csv/json format.
@@ -689,8 +800,11 @@ class YTSpeechDataGenerator(object):
     def prepare_dataset(
         self,
         links_txt,
+        sr=22050,
         download_youtube_data=True,
-        min_audio_length=7,
+        max_concat_limit=7,
+        concat_count=2,
+        min_audio_length=5,
         max_audio_length=14,
     ):
         """
@@ -717,8 +831,9 @@ class YTSpeechDataGenerator(object):
 
               max_audio_length: The maximum length of audio files.
         """
+        self.sr = sr
         if download_youtube_data:
             self.download(links_txt)
         self.split_audios()
-        self.concat_audios()
-        self.finalize_dataset(min_audio_length)
+        self.concat_audios(max_concat_limit, concat_count)
+        self.finalize_dataset(min_audio_length, max_audio_length)

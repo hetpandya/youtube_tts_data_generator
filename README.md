@@ -65,6 +65,9 @@ generator.prepare_dataset('links.txt')
       - The key for the target language in which the subtitles have to be downloaded.
       - Default value is set to *en*
       - *Tip* - check list of available languages and their keys using: `generator.get_available_langs()`
+    - *sr*:
+      - Sample Rate to keep of the audios.
+      - Default value is set to *22050*
  
 - Methods:
   - download():
@@ -88,13 +91,20 @@ generator.prepare_dataset('links.txt')
     - Example - ```generator.split_audios()```
   - concat_audios():
     - Since the split audios are based on the duration of their subtitles, they might not be so long. This method joins the split files into recognizable ones.
+    - Parameters:
+      - *max_limit*: 
+        - The upper limit of length of the audios that should be concated. The rest will be kept as they are.
+        - The default value is set to *7*
+      - *concat_count*: 
+        - The number of consecutive audios that should be concated together. 
+        - The default value is set to *2*
     - Example - ```generator.concat_audios()```
   - finalize_dataset():
     - Trims silence the joined audios since the data has been collected from YouTube and generates the final dataset after finishing all the preprocessing.
     - Parameters:
       - *min_audio_length*:
         - The minumum length of the speech that should be kept. The rest will be ignored.
-        - The default value is set set to *7*.
+        - The default value is set set to *5*.
       - *max_audio_length*:
         - The maximum length of the speech that should be kept. The rest will be ignored.
         - The default value is set set to *14*.        
@@ -111,12 +121,21 @@ generator.prepare_dataset('links.txt')
     - Parameters:
       - *links_txt*:
         - Path to the '.txt' file that contains the urls for the videos.
+      - *sr*:
+        - Sample Rate to keep of the audios.
+        - Default value is set to *22050*  
       - *download_youtube_data*:
         - Whether to download audios from YouTube.
         - Default value is *True*
+      - *max_concat_limit*: 
+        - The upper limit of length of the audios that should be concated. The rest will be kept as they are.
+        - The default value is set to *7*
+      - *concat_count*: 
+        - The number of consecutive audios that should be concated together. 
+        - The default value is set to *2*
       - *min_audio_length*:
         - The minumum length of the speech that should be kept. The rest will be ignored.
-        - The default value is set set to *7*.        
+        - The default value is set set to *5*.        
       - *max_audio_length*:
         - The maximum length of the speech that should be kept. The rest will be ignored.
         - The default value is set set to *14*.        

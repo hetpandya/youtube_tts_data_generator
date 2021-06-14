@@ -5,7 +5,7 @@ with open("README.md", "r") as f:
 
 setup(
     name="youtube_tts_data_generator",
-    version="0.1.7",
+    version="0.2.0",
     description="A python library that generates speech data with transcriptions by collecting data from YouTube.",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -14,8 +14,7 @@ setup(
     author_email="hetpandya6797@gmail.com",
     license="MIT",
     install_requires=[
-        "webvtt-py",
-        "librosa>=0.5.1",
+        "librosa==0.7.2",
         "youtube-dl",
         "tqdm",
         "pandas",
@@ -27,6 +26,8 @@ setup(
         "inflect",
         "numpy>=1.14.0",
         "unidecode==0.4.20",
+        "vtt_to_srt3",
+        "youtube-transcript-api>=0.4.1"
     ],
     packages=["youtube_tts_data_generator"],
 )
