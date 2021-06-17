@@ -21,6 +21,7 @@ setup(
         "pydub",
         "scikit-learn==0.19.2",
         "webrtcvad",
+        "webvtt-py",
         "scipy>=1.0.0",
         "numba==0.48",
         "inflect",
