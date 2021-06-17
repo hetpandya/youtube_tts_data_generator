@@ -2,7 +2,6 @@ import youtube_dl
 import os
 import errno
 import warnings
-import webvtt
 import subprocess
 from datetime import datetime
 from tqdm import tqdm
