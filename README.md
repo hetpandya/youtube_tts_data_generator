@@ -163,4 +163,4 @@ NOTE - `audio.py` is highly based on [Real Time Voice Cloning](https://github.co
 ## References
 [SRT to JSON](https://github.com/pgrabovets/srt-to-json)
 
-*Read more about the library [here](https://medium.com/@TheHetPandya/creating-your-own-text-to-speech-dataset-from-youtube-f1177845b12e)*
+*Read more about the library [here](https://het-pandya.medium.com/creating-your-own-text-to-speech-dataset-from-youtube-1b157c34fb49)*
