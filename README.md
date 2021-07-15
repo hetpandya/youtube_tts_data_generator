@@ -2,7 +2,9 @@
 
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://en.wikipedia.org/wiki/MIT_License)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-[![Downloads](https://static.pepy.tech/badge/youtube-tts-data-generator)](https://pepy.tech/project/youtube-tts-data-generator)
+<a href="https://pepy.tech/project/youtube-tts-data-generator">
+    <img alt="Downloads" src="https://pepy.tech/badge/youtube-tts-data-generator">
+</a>
 
 A python library to generate speech dataset. Youtube Speech Data Generator also takes care of almost all your speech data preprocessing needed to build a speech dataset along with their transcriptions making sure it follows a directory structure followed by most of the text-to-speech architectures.
 
