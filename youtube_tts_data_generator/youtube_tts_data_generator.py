@@ -1,4 +1,4 @@
-import youtube_dl
+import yt_dlp
 import os
 import errno
 import warnings
@@ -20,6 +20,8 @@ from youtube_transcript_api import (
 from youtube_transcript_api.formatters import JSONFormatter
 import re
 from vtt_to_srt.vtt_to_srt import read_text_file, convert_content
+
+import soundfile as sf
 
 
 class NoSubtitleWarning(UserWarning):
@@ -301,15 +303,13 @@ class YTSpeechDataGenerator(object):
                 for ix in range(len(links)):
                     link = links[ix]
                     video_id = self.get_video_id(link)
-
                     if video_id != []:
                         filename = f"{self.name}{ix+1}.mp4"
                         wav_file = filename.replace(".mp4", ".wav")
                         self.ydl_opts["outtmpl"] = os.path.join(
                             self.download_dir, filename
                         )
-
-                        with youtube_dl.YoutubeDL(self.ydl_opts) as ydl:
+                        with yt_dlp.YoutubeDL(self.ydl_opts) as ydl:
                             try:
                                 trans = (
                                     YouTubeTranscriptApi.list_transcripts(video_id)
@@ -330,6 +330,7 @@ class YTSpeechDataGenerator(object):
                                         ),
                                     ),
                                     "w",
+                                    encoding="utf-8",
                                 ).write(json_formatted)
                                 ydl.download([link])
                                 print(
@@ -345,7 +346,10 @@ class YTSpeechDataGenerator(object):
                                     f"WARNING - video {link} does not have subtitles. Skipping..",
                                     NoSubtitleWarning,
                                 )
-
+                        for root, dirs, fns in os.walk(self.download_dir):
+                            for fn in fns:
+                                if wav_file and ".mp4" in fn:
+                                    os.replace(self.download_dir + "\\" + filename + ".wav", self.download_dir + "\\" + wav_file)
                         del self.ydl_opts["outtmpl"]
                     else:
                         warnings.warn(
@@ -353,7 +357,7 @@ class YTSpeechDataGenerator(object):
                             InvalidURLWarning,
                         )
                 if self.wav_filenames != []:
-                    with open(self.filenames_txt, "w") as f:
+                    with open(self.filenames_txt, "w", encoding="utf-8") as f:
                         lines = "filename,subtitle,trim_mins_begin,trim_mins_end\n"
                         for wav in self.wav_filenames:
                             lines += f"{wav},{wav.replace('.wav','')}.{self.dataset_lang}.json,0,0\n"
@@ -738,9 +742,21 @@ class YTSpeechDataGenerator(object):
                 and trimmed_length <= max_audio_length
             ):
                 self.len_dataset += trimmed_length
+                """
                 librosa.output.write_wav(
-                    os.path.join(self.dest_dir, "wavs", audio), silence_removed, sr
+                    os.path.join(self.dest_dir, "wavs", audio), 
+                    silence_removed, 
+                    sr
                 )
+                """
+                sf.write(
+                    os.path.join(self.dest_dir, "wavs", audio), 
+                    silence_removed, 
+                    sr,
+                    format='wav',
+                    subtype='PCM_16'
+                )
+                
                 filtered_audios.append(audio)
                 filtered_txts.append(audio.replace(".wav", ".txt"))
 
